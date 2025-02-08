@@ -80,7 +80,7 @@ def get(auth, session) -> fh.FT:
                 fh.H2(f"{entry['created_at'].strftime('%Y-%m-%d %H:%M')}"),
                 fh.P(f"User Input: {entry.get('user_input', 'No input stored')}"),
                 fh.P(
-                    f"Mood Score: {entry.get('happiness_score', 'Pending Analysis')}/5"
+                    f"Mood Score: {entry.get('happiness_score', 'Pending Analysis')}/10"
                 ),
                 fh.Details()(
                     fh.Summary("View Analysis Details"),
@@ -157,7 +157,7 @@ onloadAdd(() => {
                             type="number",
                             name="happiness_score",
                             min="1",
-                            max="5",
+                            max="10",
                             cls="uk-input",
                         ),
                     )
