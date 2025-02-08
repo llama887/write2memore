@@ -1,0 +1,1 @@
+me('h1').textContent = `Today is ${new Date().toLocaleDateString()}`;

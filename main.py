@@ -3,6 +3,7 @@ from typing import Callable
 
 import fasthtml.common as fh
 from dotenv import load_dotenv
+from fh_plotly import plotly_headers
 from openai import OpenAI
 
 import modules.auth as auth
@@ -22,6 +23,7 @@ app, rt = fh.fast_app(
     live=True,
     pico=False,
     hdrs=(
+        plotly_headers,
         # franken ui: https://franken-ui.dev/docs/installation
         fh.Link(
             rel="stylesheet",

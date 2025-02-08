@@ -1,0 +1,30 @@
+me {
+    display:inline-flex;
+}
+me span {
+    word-break: break-all;
+    height: 1.5em;
+    width:0%;
+    overflow: hidden;
+    animation:
+        c 0.5s infinite steps(1),
+        t 1s linear forwards,
+        c-hide 0.5s steps(1) 1s forwards; /* hide caret after 2s aka when the typewriter is done */
+}
+me span:before {
+    content:" ";
+    display:inline-block;
+}
+@keyframes t{
+    90%,100% {width:100%}
+}
+@keyframes c{ /* Caret Animation */
+    0%,100%{box-shadow:5px 0 0 #0000}
+    50%    {box-shadow:5px 0 0 black  }
+}
+
+@keyframes c-hide {
+    0%, 100% {
+        box-shadow: none; /* Caret disappears */
+    }
+}

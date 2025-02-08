@@ -3,6 +3,7 @@ from datetime import datetime
 import fasthtml.common as fh
 from pymongo.collection import Collection
 
+import js_css_loader
 from modules.auth import Auth
 
 
@@ -62,9 +63,7 @@ def homepage(auth: Auth, session, users_collection: Collection):
             ),
             fh.Div("✍️", cls="icon"),
             fh.H1(),
-            fh.Script(
-                "me('h1').textContent = `Today is ${new Date().toLocaleDateString()}`;"
-            ),
+            fh.Script(js_css_loader.js["client_date.js"]),
         ),
         fh.Div(
             fh.A(
@@ -75,26 +74,7 @@ def homepage(auth: Auth, session, users_collection: Collection):
         fh.Main()(
             fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
-                fh.Style("""
-me textarea{width: 100%; height: 70vh; resize: none;}
-me textarea:focus {outline: none;}
-                        """),
-                fh.Script("""
-onloadAdd(() => {
-    let keystrokeCount = 0;
-    me("textarea").on("keydown", ev => {
-        let textarea = me(ev); // Get the textarea element
-        keystrokeCount++; // Increment the keystroke count
-        if (keystrokeCount % 100 === 0 && keystrokeCount >= 200) {
-            htmx.ajax("POST", "/prompt_user", {
-                target: "#diary-prompt",
-                swap: "innerHTML",
-                values: { text: textarea.value }
-            }).catch(err => console.warn("Request failed:", err));
-        }
-    });
-});
-                        """),
+                fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
                     name="text",
                     placeholder="Talk to me.....",

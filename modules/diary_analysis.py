@@ -6,6 +6,7 @@ import fasthtml.components as fh_components
 from openai import OpenAI
 from pymongo.collection import Collection
 
+import js_css_loader
 import structured_output_schemas.diary_prompt as diary_prompt
 import structured_output_schemas.diary_responses as diary_responses
 
@@ -249,44 +250,13 @@ def prompt_user(text: str, openai_client: OpenAI) -> fh.FT:
     )
     return fh.H2(
         fh.Style(
-            "me h2 span {font: inherit; color: inherit; text-decoration: inherit; }"
+            js_css_loader.styles["span_inherit_h2.css"]
         ),  # make the spans inherit the h2 style
         fh.Span(
             fh.Span(diary_prompt_response.choices[0].message.content),
             fh.Style(  # css only typewriter effect: https://dev.to/afif/a-scalable-css-only-typewriter-effect-2opn
                 # gnat css-scope-inline: https://github.com/gnat/css-scope-inline
-                """
-me {
-    display:inline-flex;
-}
-me span {
-    word-break: break-all;
-    height: 1.5em;
-    width:0%;
-    overflow: hidden;
-    animation:
-        c 0.5s infinite steps(1),
-        t 1s linear forwards,
-        c-hide 0.5s steps(1) 1s forwards; /* hide caret after 2s aka when the typewriter is done */
-}
-me span:before {
-    content:" ";
-    display:inline-block;
-}
-@keyframes t{
-    90%,100% {width:100%}
-}
-@keyframes c{ /* Caret Animation */
-    0%,100%{box-shadow:5px 0 0 #0000}
-    50%    {box-shadow:5px 0 0 black  }
-}
-
-@keyframes c-hide {
-    0%, 100% {
-        box-shadow: none; /* Caret disappears */
-    }
-}
-"""
+                js_css_loader.styles["prompt_user_typewriter.css"]
             ),
         ),
     )
