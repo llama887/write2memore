@@ -9,6 +9,13 @@ from modules.auth import Auth
 
 def homepage(auth: Auth, session, users_collection: Collection):
     is_authenticated = bool(auth and session.get("user_info"))
+    if not is_authenticated:
+        return (
+            fh.H1("Welcome to the Text Editor"),
+            fh.A(href="/login")("Login to start"),
+    )
+        
+    user_id = session["user_info"]["id"]
 
     diary_entries: list[dict[str, str | datetime | dict[str, str]] | None]
     if is_authenticated:
@@ -18,42 +25,81 @@ def homepage(auth: Auth, session, users_collection: Collection):
         )
 
         if user and "diary_entries" in user:
-            diary_entries = sorted(
+            diary_entries: list[dict[str, str | datetime | dict[str, str]] | None]  = sorted(
                 user["diary_entries"],
                 key=lambda x: x.get("created_at", ""),
                 reverse=True,
             )
         else:
             diary_entries = []
+            
+    history_entries = sorted(
+        diary_entries,  # Do not exclude today's entry
+        key=lambda x: x.get("created_at", datetime.min),
+        reverse=True
+    )
 
     history_items = []
-    for entry in diary_entries:
-        history_items.append(
-            fh.Div(cls="uk-card uk-card-default uk-card-body")(
-                fh.H2(f"{entry['created_at'].strftime('%Y-%m-%d %H:%M')}"),
-                fh.P(f"User Input: {entry.get('user_input', 'No input stored')}"),
-                fh.P(
-                    f"Mood Score: {entry.get('happiness_score', 'Pending Analysis')}/10"
-                ),
-                fh.Details()(
-                    fh.Summary("View Analysis Details"),
-                    fh.Ul(cls="uk-list uk-list-hyphen")(
-                        fh.Li(
-                            f"Social Score: {entry['analysis'].get('socialization_score', 'Pending Analysis')}"
-                        ),
-                        fh.Li(
-                            f"Productivity Score: {entry['analysis'].get('productivity_score', 'Pending Analysis')}"
-                        ),
-                        fh.Li(
-                            f"Fulfillment Score: {entry['analysis'].get('fulfillment_score', 'Pending Analysis')}"
-                        ),
-                        fh.Li(
-                            f"Health Score: {entry['analysis'].get('health_score', 'Pending Analysis')}"
+    for entry in history_entries:
+            history_items.append(
+                fh.Div(cls="uk-card uk-card-default uk-card-body")(
+                    fh.H2(f"{entry['created_at'].strftime('%Y-%m-%d %H:%M')}"),
+                    fh.P(f"User Input: {entry.get('text', 'No input stored')}"),
+                    fh.P(
+                        f"Mood Score: {entry.get('happiness_score', 'Pending Analysis')}/5"
+                    ),
+                    fh.Details()(
+                        fh.Summary("View Analysis Details"),
+                        fh.Ul(cls="uk-list uk-list-hyphen")(
+                            fh.Li(
+                                f"Social Score: {entry['analysis'].get('socialization', {}).get('score', 'Pending Analysis')}"
+                            ),
+                            fh.Li(
+                                f"Social Explanation: {entry['analysis'].get('socialization', {}).get('explanation', 'N/A')}"
+                            ),
+                            fh.Li(
+                                f"Productivity Score: {entry['analysis'].get('productivity', {}).get('score', 'Pending Analysis')}"
+                            ),
+                            fh.Li(
+                                f"Productivity Explanation: {entry['analysis'].get('productivity', {}).get('explanation', 'N/A')}"
+                            ),
+                            fh.Li(
+                                f"Fulfillment Score: {entry['analysis'].get('fulfillment', {}).get('score', 'Pending Analysis')}"
+                            ),
+                            fh.Li(
+                                f"Fulfillment Explanation: {entry['analysis'].get('fulfillment', {}).get('explanation', 'N/A')}"
+                            ),
+                            fh.Li(
+                                f"Health Score: {entry['analysis'].get('health', {}).get('score', 'Pending Analysis')}"
+                            ),
+                            fh.Li(
+                                f"Health Explanation: {entry['analysis'].get('health', {}).get('explanation', 'N/A')}"
+                            ),
                         ),
                     ),
-                ),
+                    fh.Details()(
+                        fh.Summary("Suggestions"),
+                        fh.Ul(cls="uk-list uk-list-hyphen")(
+                            *[
+                                fh.Li(f"Social: {suggestion}")
+                                for suggestion in entry['analysis'].get('socialization', {}).get('suggestions', [])
+                            ],
+                            *[
+                                fh.Li(f"Productivity: {suggestion}")
+                                for suggestion in entry['analysis'].get('productivity', {}).get('suggestions', [])
+                            ],
+                            *[
+                                fh.Li(f"Fulfillment: {suggestion}")
+                                for suggestion in entry['analysis'].get('fulfillment', {}).get('suggestions', [])
+                            ],
+                            *[
+                                fh.Li(f"Health: {suggestion}")
+                                for suggestion in entry['analysis'].get('health', {}).get('suggestions', [])
+                            ],
+                        ),
+                    ),
+                )
             )
-        )
 
     return (
         fh.Header()(
@@ -76,8 +122,12 @@ def homepage(auth: Auth, session, users_collection: Collection):
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
+                    diary_entries[0].get('text') if diary_entries else 'No input stored',
                     name="text",
                     placeholder="Talk to me.....",
+                    hx_post="/diary_prompt",
+                    hx_target="diary_prompt",
+                    hx_swap="innerHTML",
                 ),
                 fh.Div(
                     fh.Label(
@@ -91,7 +141,13 @@ def homepage(auth: Auth, session, users_collection: Collection):
                         ),
                     )
                 ),
-                fh.Button(cls="uk-btn uk-btn-default")("Submit"),
+                fh.Button(
+                    cls="uk-btn uk-btn-default",
+                    hx_disable=True,
+                    hx_post="/submit",
+                    hx_target="#data",
+                    hx_on="htmx:afterRequest => this.removeAttribute('disabled')",
+                )("Submit"),
             ),
             fh.Div(id="spinner", data_uk_spinner=True, cls="htmx-indicator"),
             fh.Div(id="data"),

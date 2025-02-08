@@ -210,30 +210,77 @@ def category_analysis(
                 ].message.parsed.improvement_suggestions,
             },
         },
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(),
+        "date": datetime.now().strftime("%Y-%m-%d")
     }
 
     # Store diary entry in MongoDB
     try:
+        # Ensure `diary_entry` is a proper dictionary
+        diary_entry = {
+            "text": diary_entry["text"],
+            "happiness_score": diary_entry["happiness_score"],
+            "analysis": {
+                "socialization": {
+                    "score": diary_entry["analysis"]["socialization"]["score"],
+                    "explanation": diary_entry["analysis"]["socialization"]["explanation"],
+                    "suggestions": diary_entry["analysis"]["socialization"]["suggestions"],
+                },
+                "productivity": {
+                    "score": diary_entry["analysis"]["productivity"]["score"],
+                    "explanation": diary_entry["analysis"]["productivity"]["explanation"],
+                    "suggestions": diary_entry["analysis"]["productivity"]["suggestions"],
+                },
+                "fulfillment": {
+                    "score": diary_entry["analysis"]["fulfillment"]["score"],
+                    "explanation": diary_entry["analysis"]["fulfillment"]["explanation"],
+                    "suggestions": diary_entry["analysis"]["fulfillment"]["suggestions"],
+                },
+                "health": {
+                    "score": diary_entry["analysis"]["health"]["score"],
+                    "explanation": diary_entry["analysis"]["health"]["explanation"],
+                    "suggestions": diary_entry["analysis"]["health"]["suggestions"],
+                },
+            },
+            "created_at": diary_entry["created_at"],  # Ensure `datetime` is serialized properly
+            "date": datetime.now().strftime("%Y-%m-%d"),
+        }
+
+        today_date = datetime.now().strftime("%Y-%m-%d")
         users_collection.update_one(
-            {"google_id": user_id},
             {
-                "$push": {"diary_entries": diary_entry},
+                "google_id": user_id,
+                "diary_entries.date": today_date,
+            },
+            {
+                "$set": {  
+                    "diary_entries.$.text": diary_entry["text"],
+                    "diary_entries.$.happiness_score": diary_entry["happiness_score"],
+                    "diary_entries.$.analysis": diary_entry["analysis"],
+                    "diary_entries.$.created_at": diary_entry["created_at"],
+                }
+            },
+            upsert=False,  
+        )
+
+        users_collection.update_one(
+            {"google_id": user_id, "diary_entries.date": {"$ne": today_date}},
+            {
+                "$push": {"diary_entries": {**diary_entry, "date": today_date}}
             },
             upsert=True,
         )
         print(f"✅ Diary entry saved for user {user_id}")
     except Exception as e:
         print(f"🔥 Failed to save diary entry: {e}")
-        return fh.P("Error saving diary entry", style="color: red;")
+
 
     return fh.Ul(cls="uk-accordion", data_uk_accordion="multiple: true")(
         socialization_accordion_element,
         productivity_accordion_element,
         fulfillment_accordion_element,
         health_accordion_element,
-    ), fh.P(f"Average Score: {(statistics.mean(scores))}")
-
+    ), fh.P(f"Average Score: {statistics.mean(scores)}")
 
 def prompt_user(text: str, openai_client: OpenAI) -> fh.FT:
     diary_prompt_response = openai_client.chat.completions.create(

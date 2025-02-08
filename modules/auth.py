@@ -13,7 +13,7 @@ google_auth_client: GoogleAppClient = GoogleAppClient(
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     redirect_uri="http://localhost:5001/auth/callback",
 )
-
+login_redir = fh.RedirectResponse('/login', status_code=303)
 
 class Auth(OAuth):
     users_collection: Collection
@@ -30,8 +30,8 @@ class Auth(OAuth):
             "email": info["email"],
             "name": info.get("name", ""),
             "picture": info.get("picture", ""),
-            "created_at": datetime.utcnow(),
-            "last_login": datetime.utcnow(),
+            "created_at": datetime.now(),
+            "last_login": datetime.now(),
         }
 
         try:
@@ -74,7 +74,5 @@ def login(req, oauth: Auth):
 
 def logout(session: dict):
     """Logout route that clears user session and redirects to home."""
-    session.pop("user_info", None)
-    response = fh.RedirectResponse("/", status_code=303)
-    response.delete_cookie("auth")
-    return response
+    del session['auth']
+    return login_redir

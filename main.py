@@ -50,7 +50,6 @@ db, users_collection = init_db()
 oauth = Auth(app, auth.google_auth_client)
 oauth.users_collection = users_collection
 
-
 @rt("/")
 def get(auth, session) -> fh.FT:
     return homepage.homepage(auth, session, users_collection)
