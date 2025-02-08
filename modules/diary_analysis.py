@@ -102,6 +102,7 @@ def category_analysis(
             ].message.parsed.improvement_suggestions,
         ),
     )
+
     scores.append(productivity_score_response.choices[0].message.parsed.score)
 
     fulfillment_score_response = openai_client.beta.chat.completions.parse(
@@ -230,7 +231,7 @@ def category_analysis(
         productivity_accordion_element,
         fulfillment_accordion_element,
         health_accordion_element,
-    ), fh.P(f"Average Score: {statistics.mean(scores)}")
+    ), fh.P(f"Average Score: {(statistics.mean(scores))}")
 
 
 def prompt_user(text: str, openai_client: OpenAI) -> fh.FT:
