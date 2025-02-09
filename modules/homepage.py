@@ -131,8 +131,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
         fh.Main()(
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
-<<<<<<< HEAD
-=======
                 fh.Textarea(
                     diary_entries[0].get("text")
                     if diary_entries
@@ -140,7 +138,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
                     name="text",
                     placeholder="Talk to me.....",
                 ),
->>>>>>> 9d4443a49e5491c87c04abe8b57a51b12b40dc88
                 fh.Div(
                     fh.Label(
                         "How are you feeling from 1-10?",
