@@ -65,7 +65,7 @@
   /* Container Grid Layout */
   .container {
     display: grid;
-    grid-template-columns: 8.33% 8.33% 58.33% 25%;
+    grid-template-columns: 16% 59% 25%;
     background: #593d28;
     opacity: 0;
     animation: showContent 0.5s ease-in-out 1.5s forwards;

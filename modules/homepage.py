@@ -118,7 +118,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
         fh.Div(cls="intro-screen")(fh.Div(cls="intro-text")("write2me")),
         fh.A("Dashboard", href="/dashboard"),
         fh.Div(cls="container")(
-            fh.Div(cls="left-margin"),
             fh.Div(cls="left-sidebar")(
                 fh.Div(id="response"),
             ),
@@ -279,7 +278,12 @@ def search(
         *[
             fh.A(
                 href=f"/diary?date={entry.get('date', datetime.min.strftime('%Y-%m-%d'))}"
-            )(fh.Span(entry.get("text", "")[:100] + "..."), fh.Br(), fh.Br(), fh.Br())
+            )(
+                fh.Span(entry.get("text", "")[:100] + "...", style="color: white;"),
+                fh.Br(),
+                fh.Br(),
+                fh.Br(),
+            )
             for entry in diary_entries[:5]
         ]
     )
