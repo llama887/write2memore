@@ -29,37 +29,42 @@ def plot_diary_data(session: dict, users_collection: Collection):
             )
             types_of_analysis.add(analysis_type)
 
-    analysis_plots: list[fh.FT] = {}
-    happiness_data = {
-        "data": [
-            {
-                "y": happiness_scores,
-                "x": dates,
-                "type": "scatter",
-            }
-        ],
-        "title": "happiness",
-        "type": "scatter",
-    }
-    analysis_plots["happiness plot"] = make_plot(happiness_data, "happiness plot")
+    data = []
+    data.append(
+        {"x": dates, "y": happiness_scores, "type": "scatter", "name": "happiness"}
+    )
+
     scores_per_analysis_type: dict[str, int] = {}
     for analysis_type in types_of_analysis:
         current_analysis_type_scores: list[int] = []
         for analysis_score in analysis_scores:
             current_analysis_type_scores.append(analysis_score.get(analysis_type, 0))
-        plot_data = {
-            "data": [
-                {
-                    "y": current_analysis_type_scores,
-                    "x": dates,
-                    "type": "scatter",
-                }
-            ],
-            "title": analysis_type,
-            "type": "scatter",
-        }
-        analysis_plots[analysis_type] = make_plot(plot_data, f"{analysis_type} plot")
+        data.append(
+            {
+                "x": dates,
+                "y": current_analysis_type_scores,
+                "type": "scatter",
+                "name": analysis_type,
+            }
+        )
         scores_per_analysis_type[analysis_type] = current_analysis_type_scores
+    plot_data = {
+        "data": data,
+        "layout": {"title": data},
+        "config": {
+            "modeBarButtonsToRemove": [
+                "zoom2d",
+                "pan2d",
+                "select2d",
+                "zoom",
+                "resetScale2d",
+                "zoomIn2d",
+                "zoomOut2d",
+            ]
+        },
+    }
+
+    # finding the most important feature
     X: pd.DataFrame = pd.DataFrame(scores_per_analysis_type)
     y: pd.DataFrame = pd.DataFrame(
         np.array(happiness_scores), columns=["happiness_score"]
@@ -69,18 +74,13 @@ def plot_diary_data(session: dict, users_collection: Collection):
     coefficients = pd.DataFrame(
         {"Feature": X.columns, "Coefficient": model.coef_.ravel()}
     ).sort_values(by="Coefficient", ascending=False)
-    print(coefficients)
+
     return (
         fh.A("Main", href="/"),
         fh.H1(
             f"The most important thing to optimize is {coefficients.iloc[0]['Feature']}"
         ),
-        fh.Div(
-            *[
-                (fh.H2(analysis_type), analysis_plots[analysis_type])
-                for analysis_type in list(analysis_plots.keys())
-            ]
-        ),
+        make_plot(plot_data, "plot"),
     )
 
 
