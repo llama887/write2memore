@@ -3,10 +3,10 @@ from typing import Callable
 
 import fasthtml.common as fh
 from dotenv import load_dotenv
-from fh_plotly import plotly_headers
 from openai import OpenAI
 
 import modules.auth as auth
+import modules.dashboard as dashboard
 import modules.diary_analysis as diary_analysis
 import modules.homepage as homepage
 from modules.auth import Auth
@@ -23,7 +23,8 @@ app, rt = fh.fast_app(
     live=True,
     pico=False,
     hdrs=(
-        plotly_headers,
+        # plotly
+        fh.Script(src="https://cdn.plot.ly/plotly-2.32.0.min.js"),
         # franken ui: https://franken-ui.dev/docs/installation
         fh.Link(
             rel="stylesheet",
@@ -79,7 +80,8 @@ def post(text: str = "") -> fh.FT:
 
 
 @rt("/dashboard")
-def get(session): ...
+def get(session):
+    return dashboard.plot_diary_data(session, users_collection)
 
 
 fh.serve(host="localhost", port=5001)

@@ -1,5 +1,3 @@
 python-fasthtml
 openai
 pymongo[srv]==3.12
-fh-plotly
-pandas
