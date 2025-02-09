@@ -164,6 +164,7 @@ def homepage(auth: Auth, session, users_collection: Collection):
                         rows=6,
                         cols=50,
                         cls="uk-textarea",
+                        style="height: 70vh;",
                     ),
                     fh.Button(
                         cls="uk-btn uk-btn-default",
