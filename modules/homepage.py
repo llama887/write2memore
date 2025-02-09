@@ -119,7 +119,9 @@ def homepage(auth: Auth, session, users_collection: Collection):
         fh.A("Dashboard", href="/dashboard"),
         fh.Div(cls="container")(
             fh.Div(cls="left-margin"),
-            fh.Div(cls="left-sidebar"),
+            fh.Div(cls="left-sidebar")(
+                fh.Div(id="response"),
+            ),
             fh.Div(cls="main-content")(
                 fh.Div(cls="header")(
                     fh.Div(cls="date-display")(
@@ -135,7 +137,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
                     fh.Hr(cls="separator"),
                     fh.Div(id="diary-prompt")("Tell me about your day...."),
                 ),
-                fh.Div(id="response"),
                 fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                     fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                     fh.Div(
@@ -278,7 +279,7 @@ def search(
         *[
             fh.A(
                 href=f"/diary?date={entry.get('date', datetime.min.strftime('%Y-%m-%d'))}"
-            )(fh.Span(entry.get("text", "")[:100] + "..."))
+            )(fh.Span(entry.get("text", "")[:100] + "..."), fh.Br(), fh.Br(), fh.Br())
             for entry in diary_entries[:5]
         ]
     )
