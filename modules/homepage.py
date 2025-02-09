@@ -112,23 +112,33 @@ def homepage(auth: Auth, session, users_collection: Collection):
         )
 
     return (
+        fh.Nav(cls="uk-navbar-container uk-navbar")(
+            fh.Div(cls="uk-container")(
+                fh.Div(cls="uk-navbar-right")(
+                    fh.Ul(cls="uk-navbar-nav")(
+                        fh.Li(fh.A("Dashboard", href="/dashboard")),
+                        fh.Li(
+                            fh.A(
+                                "Login" if not is_authenticated else "Logout",
+                                href="/login"
+                                if not is_authenticated
+                                else "/auth/logout",
+                            )
+                        ),
+                    )
+                ),
+            )
+        ),
         fh.Header()(
             fh.Div(
                 style="background-image: url(https://images.unsplash.com/photo-1505533321630-975218a5f66f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
                 cls="background",
             ),
-            fh.Div("✍️", cls="icon"),
+            # fh.Div("✍️", cls="icon"),
             fh.H1(),
             fh.Script(js_css_loader.js["client_date.js"]),
         ),
-        fh.Div(
-            fh.A(
-                "Login" if not is_authenticated else "Logout",
-                href="/login" if not is_authenticated else "/auth/logout",
-            ),
-            fh.A("Dashboard", href="/dashboard"),
-        ),
-        fh.Main()(
+        fh.Main(cls="main-form")(
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
