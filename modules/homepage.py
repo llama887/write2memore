@@ -141,6 +141,19 @@ def homepage(auth: Auth, session, users_collection: Collection):
         fh.Main(cls="main-form")(
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+                fh.Textarea(
+                    diary_entries[0].get("text")
+                    if diary_entries
+                    else "No input stored",
+                    name="text",
+                    placeholder="Talk to me.....",
+                ),
+>>>>>>> 9d4443a49e5491c87c04abe8b57a51b12b40dc88
+>>>>>>> 7d1f7220c72d4eb2af4849635a5461571c18673e
                 fh.Div(
                     fh.Label(
                         "How are you feeling from 1-10?",
