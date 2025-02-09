@@ -2,7 +2,10 @@ import json
 from typing import Any
 
 import fasthtml.common as fh
+import numpy as np
+import pandas as pd
 from pymongo.collection import Collection
+from sklearn.linear_model import LinearRegression
 
 
 def plot_diary_data(session: dict, users_collection: Collection):
@@ -39,6 +42,7 @@ def plot_diary_data(session: dict, users_collection: Collection):
         "type": "scatter",
     }
     analysis_plots["happiness plot"] = make_plot(happiness_data, "happiness plot")
+    scores_per_analysis_type: dict[str, int] = {}
     for analysis_type in types_of_analysis:
         current_analysis_type_scores: list[int] = []
         for analysis_score in analysis_scores:
@@ -55,11 +59,25 @@ def plot_diary_data(session: dict, users_collection: Collection):
             "type": "scatter",
         }
         analysis_plots[analysis_type] = make_plot(plot_data, f"{analysis_type} plot")
+        scores_per_analysis_type[analysis_type] = current_analysis_type_scores
+    X: pd.DataFrame = pd.DataFrame(scores_per_analysis_type)
+    y: pd.DataFrame = pd.DataFrame(
+        np.array(happiness_scores), columns=["happiness_score"]
+    )
+    model = LinearRegression()
+    model.fit(X, y)
+    coefficients = pd.DataFrame(
+        {"Feature": X.columns, "Coefficient": model.coef_.ravel()}
+    ).sort_values(by="Coefficient", ascending=False)
+    print(coefficients)
     return (
         fh.A("Main", href="/"),
+        fh.H1(
+            f"The most important thing to optimize is {coefficients.iloc[0]['Feature']}"
+        ),
         fh.Div(
             *[
-                (fh.H1(analysis_type), analysis_plots[analysis_type])
+                (fh.H2(analysis_type), analysis_plots[analysis_type])
                 for analysis_type in list(analysis_plots.keys())
             ]
         ),
