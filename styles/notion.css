@@ -51,7 +51,7 @@ header .icon {
 }
 
 header .background {
-    height: 200px;
+    height: 250px;
     position: absolute;
     top: 0;
     left: 0;
@@ -220,7 +220,6 @@ code {
     padding: 0.2em 0.4em;
 }
 
-
 pre {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
     line-height: normal;
@@ -323,13 +322,4 @@ img {
 
 .b-red {
     background: rgb(251, 228, 228) none repeat scroll 0% 0%;
-}
-
-.main-form {
-    background-color: #fbf5e0;
-    padding-top: 0; 
-}
-
-.uk-container {
-    padding-left: 100px;
 }

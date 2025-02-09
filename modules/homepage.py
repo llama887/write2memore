@@ -116,6 +116,15 @@ def homepage(auth: Auth, session, users_collection: Collection):
         )
 
     return (
+        fh.Header()(
+            fh.Div(
+                style="background-image: url(https://images.unsplash.com/photo-1505533321630-975218a5f66f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
+                cls="background",
+            ),
+            fh.Div("✍️", cls="icon"),
+            fh.H1(),
+            fh.Script(js_css_loader.js["client_date.js"]),
+        ),
         fh.Nav(cls="uk-navbar-container uk-navbar")(
             fh.Div(cls="uk-container")(
                 fh.Div(cls="uk-navbar-right")(
@@ -133,15 +142,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
                 ),
             )
         ),
-        fh.Header()(
-            fh.Div(
-                style="background-image: url(https://images.unsplash.com/photo-1505533321630-975218a5f66f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
-                cls="background",
-            ),
-            # fh.Div("✍️", cls="icon"),
-            fh.H1(),
-            fh.Script(js_css_loader.js["client_date.js"]),
-        ),
         fh.Form(hx_post="/search", hx_trigger="submit", hx_target="#response")(
             fh.Input(
                 type="text",
@@ -152,23 +152,21 @@ def homepage(auth: Auth, session, users_collection: Collection):
             fh.Button("Send", type="submit"),
         ),
         fh.Div(id="response"),
-        fh.Nav(
-            fh.A(
-                "Login" if not is_authenticated else "Logout",
-                href="/login" if not is_authenticated else "/auth/logout",
-            ),
-            fh.A("Dashboard", href="/dashboard"),
-        ),
         fh.Main(cls="main-form")(
             fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
                     diary_entries[0].get("text")
-                    if diary_entries
-                    else "No input stored",
+                    if diary_entries[0].get("created_at", datetime.min).date()
+                    == datetime.today().date()
+                    else "",
                     name="text",
                     placeholder="Talk to me.....",
+                    hx_swap="innerHTML",
+                    rows=6,
+                    cols=50,
+                    cls="uk-textarea",
                 ),
                 fh.Div(
                     fh.Label(
@@ -182,28 +180,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
                         ),
                     )
                 ),
-                fh.Div(style="height: 30px;"),  # Spacer
-                fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
-                fh.Textarea(
-                    diary_entries[0].get("text")
-                    if diary_entries
-                    else "No input stored",
-                    name="text",
-                    placeholder="What's on your mind?",
-                    hx_post="/diary_prompt",
-                    hx_target="diary_prompt",
-                    hx_swap="innerHTML",
-                    rows=6,
-                    cols=50,
-                    cls="uk-textarea",
-                ),
-                fh.Button(
-                    cls="uk-btn uk-btn-default",
-                    hx_disable=True,
-                    hx_post="/submit",
-                    hx_target="#data",
-                    hx_on="htmx:afterRequest => this.removeAttribute('disabled')",
-                )("Submit"),
             ),
             fh.Div(id="spinner", data_uk_spinner=True, cls="htmx-indicator"),
             fh.Div(id="data"),
@@ -240,5 +216,29 @@ def search(
     )
 
     return fh.Div(
-        *[fh.P(entry.get("text", "")[:100] + "...") for entry in diary_entries[:5]]
+        *[
+            fh.A(
+                href=f"/diary?date={entry.get('date', datetime.min.strftime('%Y-%m-%d'))}"
+            )(fh.Span(entry.get("text", "")[:100] + "..."))
+            for entry in diary_entries[:5]
+        ]
     )
+
+
+def diary(date: datetime, session: dict, users_collection: Collection):
+    user_id = session["user_info"]["id"]
+    user: dict = users_collection.find_one({"google_id": user_id})
+    diary_entries: list[dict[str, int | list[dict[str, int]] | Any]] = sorted(
+        user.get("diary_entries"),
+        key=lambda x: int(x.get("date", datetime.min.strftime("%Y-%m-%d")) == date),
+        reverse=True,
+    )
+    if (
+        len(diary_entries) > 0
+        and diary_entries[0].get("date", datetime.min.strftime("%Y-%m-%d")) == date
+    ):
+        return fh.Header(fh.A("Main", href="/")), fh.Div(cls="uk-card uk-card-body")(
+            fh.H3(cls="uk-card-title")(date),
+            fh.P(diary_entries[0].get("text", "")),
+        )
+    return fh.P(f"Could not find a diary entry created at {date}")

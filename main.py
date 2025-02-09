@@ -105,4 +105,9 @@ def get(session):
     return dashboard.weekly_summary(openai_client, session, users_collection)
 
 
+@rt("/diary")
+def get(date: str, session):
+    return homepage.diary(date, session, users_collection)
+
+
 fh.serve(host="localhost", port=5001)
