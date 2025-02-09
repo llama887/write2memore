@@ -138,9 +138,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
                     else "No input stored",
                     name="text",
                     placeholder="Talk to me.....",
-                    hx_post="/diary_prompt",
-                    hx_target="diary_prompt",
-                    hx_swap="innerHTML",
                 ),
                 fh.Div(
                     fh.Label(
