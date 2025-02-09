@@ -7,8 +7,8 @@ from openai import OpenAI
 from pymongo.collection import Collection
 
 import js_css_loader
-import structured_output_schemas.diary_prompt as diary_prompt
-import structured_output_schemas.diary_responses as diary_responses
+import prompts_and_schemas.diary_prompt as diary_prompt
+import prompts_and_schemas.diary_responses as diary_responses
 
 
 def category_analysis(
@@ -170,80 +170,61 @@ def category_analysis(
     if not user:
         return fh.P("Error: User not found. Please log in again.", style="color: red;")
 
-    # Prepare diary entry for storage
-    diary_entry = {
-        "text": text,
-        "happiness_score": happiness_score,
-        "analysis": {
-            "socialization": {
-                "score": socialization_score_response.choices[0].message.parsed.score,
-                "explanation": socialization_score_response.choices[
-                    0
-                ].message.parsed.reason,
-                "suggestions": socialization_score_response.choices[
-                    0
-                ].message.parsed.improvement_suggestions,
-            },
-            "productivity": {
-                "score": productivity_score_response.choices[0].message.parsed.score,
-                "explanation": productivity_score_response.choices[
-                    0
-                ].message.parsed.reason,
-                "suggestions": productivity_score_response.choices[
-                    0
-                ].message.parsed.improvement_suggestions,
-            },
-            "fulfillment": {
-                "score": fulfillment_score_response.choices[0].message.parsed.score,
-                "explanation": fulfillment_score_response.choices[
-                    0
-                ].message.parsed.reason,
-                "suggestions": fulfillment_score_response.choices[
-                    0
-                ].message.parsed.improvement_suggestions,
-            },
-            "health": {
-                "score": health_score_response.choices[0].message.parsed.score,
-                "explanation": health_score_response.choices[0].message.parsed.reason,
-                "suggestions": health_score_response.choices[
-                    0
-                ].message.parsed.improvement_suggestions,
-            },
-        },
-        "created_at": datetime.now(),
-        "date": datetime.now().strftime("%Y-%m-%d")
-    }
-
     # Store diary entry in MongoDB
     try:
         # Ensure `diary_entry` is a proper dictionary
         diary_entry = {
-            "text": diary_entry["text"],
-            "happiness_score": diary_entry["happiness_score"],
+            "text": text,
+            "happiness_score": happiness_score,
             "analysis": {
                 "socialization": {
-                    "score": diary_entry["analysis"]["socialization"]["score"],
-                    "explanation": diary_entry["analysis"]["socialization"]["explanation"],
-                    "suggestions": diary_entry["analysis"]["socialization"]["suggestions"],
+                    "score": socialization_score_response.choices[
+                        0
+                    ].message.parsed.score,
+                    "explanation": socialization_score_response.choices[
+                        0
+                    ].message.parsed.reason,
+                    "suggestions": socialization_score_response.choices[
+                        0
+                    ].message.parsed.improvement_suggestions,
                 },
                 "productivity": {
-                    "score": diary_entry["analysis"]["productivity"]["score"],
-                    "explanation": diary_entry["analysis"]["productivity"]["explanation"],
-                    "suggestions": diary_entry["analysis"]["productivity"]["suggestions"],
+                    "score": productivity_score_response.choices[
+                        0
+                    ].message.parsed.score,
+                    "explanation": productivity_score_response.choices[
+                        0
+                    ].message.parsed.reason,
+                    "suggestions": productivity_score_response.choices[
+                        0
+                    ].message.parsed.improvement_suggestions,
                 },
                 "fulfillment": {
-                    "score": diary_entry["analysis"]["fulfillment"]["score"],
-                    "explanation": diary_entry["analysis"]["fulfillment"]["explanation"],
-                    "suggestions": diary_entry["analysis"]["fulfillment"]["suggestions"],
+                    "score": fulfillment_score_response.choices[0].message.parsed.score,
+                    "explanation": fulfillment_score_response.choices[
+                        0
+                    ].message.parsed.reason,
+                    "suggestions": fulfillment_score_response.choices[
+                        0
+                    ].message.parsed.improvement_suggestions,
                 },
                 "health": {
-                    "score": diary_entry["analysis"]["health"]["score"],
-                    "explanation": diary_entry["analysis"]["health"]["explanation"],
-                    "suggestions": diary_entry["analysis"]["health"]["suggestions"],
+                    "score": health_score_response.choices[0].message.parsed.score,
+                    "explanation": health_score_response.choices[
+                        0
+                    ].message.parsed.reason,
+                    "suggestions": health_score_response.choices[
+                        0
+                    ].message.parsed.improvement_suggestions,
                 },
             },
-            "created_at": diary_entry["created_at"],  # Ensure `datetime` is serialized properly
+            "created_at": datetime.now(),  # Ensure `datetime` is serialized properly
             "date": datetime.now().strftime("%Y-%m-%d"),
+            "vector": openai_client.embeddings.create(
+                input=text, model="text-embedding-3-large"
+            )
+            .data[0]
+            .embedding,
         }
 
         today_date = datetime.now().strftime("%Y-%m-%d")
@@ -253,27 +234,24 @@ def category_analysis(
                 "diary_entries.date": today_date,
             },
             {
-                "$set": {  
+                "$set": {
                     "diary_entries.$.text": diary_entry["text"],
                     "diary_entries.$.happiness_score": diary_entry["happiness_score"],
                     "diary_entries.$.analysis": diary_entry["analysis"],
                     "diary_entries.$.created_at": diary_entry["created_at"],
                 }
             },
-            upsert=False,  
+            upsert=False,
         )
 
         users_collection.update_one(
             {"google_id": user_id, "diary_entries.date": {"$ne": today_date}},
-            {
-                "$push": {"diary_entries": {**diary_entry, "date": today_date}}
-            },
+            {"$push": {"diary_entries": {**diary_entry, "date": today_date}}},
             upsert=True,
         )
         print(f"✅ Diary entry saved for user {user_id}")
     except Exception as e:
         print(f"🔥 Failed to save diary entry: {e}")
-
 
     return fh.Ul(cls="uk-accordion", data_uk_accordion="multiple: true")(
         socialization_accordion_element,
@@ -281,6 +259,7 @@ def category_analysis(
         fulfillment_accordion_element,
         health_accordion_element,
     ), fh.P(f"Average Score: {statistics.mean(scores)}")
+
 
 def prompt_user(text: str, openai_client: OpenAI) -> fh.FT:
     diary_prompt_response = openai_client.chat.completions.create(

@@ -68,6 +68,11 @@ def post(text: str, happiness_score: int, session) -> fh.FT:
     )
 
 
+@rt("/search")
+def post(search_query: str, session) -> fh.FT:
+    return homepage.search(search_query, session, users_collection, openai_client)
+
+
 @rt("/login")
 def login(req):
     return auth.login(req, oauth)
@@ -86,6 +91,13 @@ def post(text: str = "") -> fh.FT:
 @rt("/dashboard")
 def get(session):
     return dashboard.plot_diary_data(session, users_collection)
+
+
+@rt("/improvement_suggestions")
+def get(session, feature: str):
+    return dashboard.improvement_suggestions(
+        feature, openai_client, session, users_collection
+    )
 
 
 fh.serve(host="localhost", port=5001)

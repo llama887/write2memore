@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Any
 
 import fasthtml.common as fh
+import numpy as np
+from numpy.linalg import norm
+from openai import OpenAI
 from pymongo.collection import Collection
 
 import js_css_loader
@@ -138,7 +142,29 @@ def homepage(auth: Auth, session, users_collection: Collection):
             fh.H1(),
             fh.Script(js_css_loader.js["client_date.js"]),
         ),
+<<<<<<< HEAD
         fh.Main(cls="main-form")(
+=======
+        fh.Form(hx_post="/search", hx_trigger="submit", hx_target="#response")(
+            fh.Input(
+                type="text",
+                name="search_query",
+                placeholder="Search past diaries...",
+                required=True,
+            ),
+            fh.Button("Send", type="submit"),
+        ),
+        fh.Div(id="response"),
+        fh.Nav(
+            fh.A(
+                "Login" if not is_authenticated else "Logout",
+                href="/login" if not is_authenticated else "/auth/logout",
+            ),
+            fh.A("Dashboard", href="/dashboard"),
+        ),
+        fh.Main()(
+            fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
+>>>>>>> franklin_dev/dashboard
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
@@ -187,4 +213,36 @@ def homepage(auth: Auth, session, users_collection: Collection):
             fh.Div(id="data"),
         ),
         fh.Div(cls="uk-margin-top")(fh.H2("History"), *history_items),
+    )
+
+
+def search(
+    search_query: str,
+    session: dict,
+    users_collection: Collection,
+    openai_client: OpenAI,
+):
+    search_query_embedding = np.array(
+        openai_client.embeddings.create(
+            input=search_query, model="text-embedding-3-large"
+        )
+        .data[0]
+        .embedding
+    )
+    user_id = session["user_info"]["id"]
+    user: dict = users_collection.find_one({"google_id": user_id})
+    diary_entries: list[dict[str, int | list[dict[str, int]] | Any]] = sorted(
+        user.get("diary_entries"),
+        key=lambda x: np.dot(
+            search_query_embedding,
+            np.array(x.get("vector", [0] * len(search_query_embedding))),
+        )
+        / (
+            norm(search_query_embedding)
+            * norm(x.get("vector", [0] * len(search_query_embedding)))
+        ),
+    )
+
+    return fh.Div(
+        *[fh.P(entry.get("text", "")[:100] + "...") for entry in diary_entries[:5]]
     )

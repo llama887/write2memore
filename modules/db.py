@@ -1,12 +1,9 @@
 import os
 
-import dotenv
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.errors import ConnectionFailure
-
-dotenv.load_dotenv()
 
 
 def init_db() -> tuple[Database, Collection]:
@@ -31,10 +28,13 @@ def init_db() -> tuple[Database, Collection]:
     users_collection: Collection = db["users"]
 
     try:
+        # Create standard indexes
         users_collection.create_index("google_id", unique=True)
         users_collection.create_index("email", unique=True)
         users_collection.create_index([("last_login", -1)])
         print("✅ Database indexes created")
+
     except Exception as e:
         print(f"❌ Index creation failed: {e}")
+
     return db, users_collection
