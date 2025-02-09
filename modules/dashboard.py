@@ -55,11 +55,14 @@ def plot_diary_data(session: dict, users_collection: Collection):
             "type": "scatter",
         }
         analysis_plots[analysis_type] = make_plot(plot_data, f"{analysis_type} plot")
-    return fh.Div(
-        *[
-            (fh.H1(analysis_type), analysis_plots[analysis_type])
-            for analysis_type in list(analysis_plots.keys())
-        ]
+    return (
+        fh.A("Main", href="/"),
+        fh.Div(
+            *[
+                (fh.H1(analysis_type), analysis_plots[analysis_type])
+                for analysis_type in list(analysis_plots.keys())
+            ]
+        ),
     )
 
 
