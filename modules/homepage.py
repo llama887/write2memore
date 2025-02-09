@@ -114,77 +114,136 @@ def homepage(auth: Auth, session, users_collection: Collection):
                 ),
             )
         )
-
-    return (
-        fh.Header()(
-            fh.Div(
-                style="background-image: url(https://images.unsplash.com/photo-1505533321630-975218a5f66f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
-                cls="background",
-            ),
-            fh.Div("✍️", cls="icon"),
-            fh.H1(),
-            fh.Script(js_css_loader.js["client_date.js"]),
-        ),
-        fh.Nav(cls="uk-navbar-container uk-navbar")(
-            fh.Div(cls="uk-container")(
-                fh.Div(cls="uk-navbar-right")(
-                    fh.Ul(cls="uk-navbar-nav")(
-                        fh.Li(fh.A("Dashboard", href="/dashboard")),
-                        fh.Li(
-                            fh.A(
-                                "Login" if not is_authenticated else "Logout",
-                                href="/login"
-                                if not is_authenticated
-                                else "/auth/logout",
-                            )
+    return fh.Body(
+        fh.Div(cls="intro-screen")(fh.Div(cls="intro-text")("write2me")),
+        fh.A("Dashboard", href="/dashboard"),
+        fh.Div(cls="container")(
+            fh.Div(cls="left-margin"),
+            fh.Div(cls="left-sidebar"),
+            fh.Div(cls="main-content")(
+                fh.Div(cls="header")(
+                    fh.Div(cls="date-display")(
+                        fh.Div("2025", id="currentYear", cls="year"),
+                        fh.P(
+                            f"Today is {datetime.now().strftime('%Y-%m-%d')}",
+                            cls="today-text",
                         ),
-                    )
+                        cls="date-display",
+                    ),
                 ),
-            )
-        ),
-        fh.Form(hx_post="/search", hx_trigger="submit", hx_target="#response")(
-            fh.Input(
-                type="text",
-                name="search_query",
-                placeholder="Search past diaries...",
-                required=True,
+                fh.Div(cls="date-info")(
+                    fh.Hr(cls="separator"),
+                    fh.Div(id="diary-prompt")("Tell me about your day...."),
+                ),
+                fh.Div(id="response"),
+                fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
+                    fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
+                    fh.Div(
+                        fh.Label(
+                            "How are you feeling from 1-10?",
+                            fh.Input(
+                                type="number",
+                                name="happiness_score",
+                                min="1",
+                                max="10",
+                                cls="uk-input",
+                            ),
+                        )
+                    ),
+                    fh.Div(style="height: 30px;"),
+                    fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
+                    fh.Textarea(
+                        diary_entries[0].get("text")
+                        if diary_entries
+                        else "No input stored",
+                        name="text",
+                        placeholder="What's on your mind?",
+                        hx_post="/diary_prompt",
+                        hx_target="diary_prompt",
+                        hx_swap="innerHTML",
+                        rows=6,
+                        cols=50,
+                        cls="uk-textarea",
+                    ),
+                    fh.Button(
+                        cls="uk-btn uk-btn-default",
+                        hx_disable=True,
+                        hx_post="/submit",
+                        hx_target="#data",
+                        hx_on="htmx:afterRequest => this.removeAttribute('disabled')",
+                    )("Submit"),
+                ),
+                fh.Div(id="spinner", data_uk_spinner=True, cls="htmx-indicator"),
+                fh.Div(id="data"),
             ),
-            fh.Button("Send", type="submit"),
-        ),
-        fh.Div(id="response"),
-        fh.Main(cls="main-form")(
-            fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
-            fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
-                fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
-                fh.Textarea(
-                    diary_entries[0].get("text")
-                    if diary_entries[0].get("created_at", datetime.min).date()
-                    == datetime.today().date()
-                    else "",
-                    name="text",
-                    placeholder="Talk to me.....",
-                    hx_swap="innerHTML",
-                    rows=6,
-                    cols=50,
-                    cls="uk-textarea",
-                ),
-                fh.Div(
-                    fh.Label(
-                        "How are you feeling from 1-10?",
+            fh.Div(cls="right-sidebar")(
+                *[
+                    fh.A(fh.Span(month), href=f"/{month.lower()}", cls="tab")
+                    for month in [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                    ]
+                ],
+                fh.A(fh.Span("Login"), href="#", id="loginTab", cls="tab"),
+                fh.Div(cls="search-container", style="display: flex;")(
+                    fh.Form(hx_post="/search", hx_target="#response")(
                         fh.Input(
-                            type="number",
-                            name="happiness_score",
-                            min="1",
-                            max="10",
-                            cls="uk-input",
-                        ),
-                    )
+                            type="text",
+                            name="search_query",
+                            placeholder="Search past diaries...",
+                            required=True,
+                            style="flex-grow:1",
+                        )
+                    ),
                 ),
             ),
-            fh.Div(id="spinner", data_uk_spinner=True, cls="htmx-indicator"),
-            fh.Div(id="data"),
+            fh.Div(id="loginModal", cls="modal")(
+                fh.Div(cls="modal-content")(
+                    fh.Span("×", cls="close-button"),
+                    fh.Div(cls="login-container")(
+                        fh.H2("Login"),
+                        fh.Form(
+                            action="/login",
+                            method="post",
+                        )(
+                            fh.Input(
+                                type="text",
+                                name="username",
+                                placeholder="Username or Email",
+                                required=True,
+                            ),
+                            fh.Input(
+                                type="password",
+                                name="password",
+                                placeholder="Password",
+                                required=True,
+                            ),
+                            fh.Button("Login", type="submit"),
+                        ),
+                        fh.Div(
+                            fh.A("Forgot your password?", href="#"),
+                            cls="forgot-password",
+                        ),
+                    ),
+                ),
+            ),
+            fh.Div(id="calendarModal", cls="modal")(
+                fh.Div(cls="modal-content calendar-modal-content")(
+                    fh.Span("×", cls="close-calendar-button"),
+                    fh.Div(id="calendarContent"),
+                ),
+            ),
         ),
-        fh.Div(cls="uk-margin-top")(fh.H2("History"), *history_items),
     )
 
 
