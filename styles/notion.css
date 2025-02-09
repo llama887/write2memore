@@ -51,7 +51,7 @@ header .icon {
 }
 
 header .background {
-    height: 250px;
+    height: 200px;
     position: absolute;
     top: 0;
     left: 0;
@@ -323,4 +323,13 @@ img {
 
 .b-red {
     background: rgb(251, 228, 228) none repeat scroll 0% 0%;
+}
+
+.main-form {
+    background-color: #fbf5e0;
+    padding-top: 0; 
+}
+
+.uk-container {
+    padding-left: 100px;
 }
