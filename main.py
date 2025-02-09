@@ -43,12 +43,17 @@ app, rt = fh.fast_app(
         ),
         # notion style: https://github.com/miloxeon/potion/tree/master
         fh.Link(rel="stylesheet", href="styles/notion.css", type="text/css"),
+        fh.Link(
+            rel="stylesheet",
+            href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap",
+        ),
     ),
 )
 
 db, users_collection = init_db()
 oauth = Auth(app, auth.google_auth_client)
 oauth.users_collection = users_collection
+
 
 @rt("/")
 def get(auth, session) -> fh.FT:
