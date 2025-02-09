@@ -51,6 +51,7 @@ db, users_collection = init_db()
 oauth = Auth(app, auth.google_auth_client)
 oauth.users_collection = users_collection
 
+
 @rt("/")
 def get(auth, session) -> fh.FT:
     return homepage.homepage(auth, session, users_collection)
@@ -61,6 +62,11 @@ def post(text: str, happiness_score: int, session) -> fh.FT:
     return diary_analysis.category_analysis(
         text, happiness_score, openai_client, session, users_collection
     )
+
+
+@rt("/search")
+def post(search_query: str, session) -> fh.FT:
+    return homepage.search(search_query, session, users_collection, openai_client)
 
 
 @rt("/login")
@@ -81,6 +87,13 @@ def post(text: str = "") -> fh.FT:
 @rt("/dashboard")
 def get(session):
     return dashboard.plot_diary_data(session, users_collection)
+
+
+@rt("/improvement_suggestions")
+def get(session, feature: str):
+    return dashboard.improvement_suggestions(
+        feature, openai_client, session, users_collection
+    )
 
 
 fh.serve(host="localhost", port=5001)
