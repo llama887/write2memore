@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 from typing import Any
 
 import fasthtml.common as fh
@@ -9,6 +10,7 @@ from pymongo.collection import Collection
 from sklearn.linear_model import LinearRegression
 
 import prompts_and_schemas.diary_feature_analysis as diary_feature_analysis
+import prompts_and_schemas.diary_prompt as diary_prompt
 
 
 def plot_diary_data(session: dict, users_collection: Collection):
@@ -88,13 +90,29 @@ def plot_diary_data(session: dict, users_collection: Collection):
             f"The most important thing to optimize is {coefficients.iloc[0]['Feature']}"
         ),
         fh.Div(
-            hx_indicator="#spinner",
+            hx_indicator="#improvement-suggestions-spinner",
             hx_trigger="load",
             hx_swap="innerHTML",
             hx_get=f"/improvement_suggestions?feature={coefficients.iloc[0]['Feature']}",
         ),
-        fh.Script("console.log(document.getElementById('optimization-content'));"),
-        fh.Div(id="spinner", data_uk_spinner=True, cls="htmx-indicator"),
+        fh.Div(
+            id="improvement-suggestions-spinner",
+            data_uk_spinner=True,
+            cls="htmx-indicator",
+        ),
+        fh.H1("Weekly Summary"),
+        fh.Div(
+            hx_indicator="#weekly-goals-spinner",
+            hx_trigger="load",
+            hx_swap="innerHTML",
+            hx_get="/weekly_summary",
+        ),
+        fh.Div(
+            id="weekly-goals-spinner",
+            data_uk_spinner=True,
+            cls="htmx-indicator",
+        ),
+        fh.H1("All Time Performance"),
         _make_plot(plot_data, "plot"),
     )
 
@@ -198,3 +216,69 @@ def improvement_suggestions(
         ],
     )
     return fh.P(improvement_suggestions_response.choices[0].message.content)
+
+
+def weekly_summary(
+    openai_client: OpenAI,
+    session: dict,
+    users_collection: Collection,
+):
+    user_id = session["user_info"]["id"]
+    user: dict = users_collection.find_one({"google_id": user_id})
+    diary_entries: list[dict[str, int | list[dict[str, int]] | Any]] = sorted(
+        user.get("diary_entries"), key=lambda x: x.get("created_at", ""), reverse=True
+    )
+    week_entries = []
+    one_week_ago = datetime.now() - timedelta(weeks=1)
+    for entry in diary_entries:
+        if entry.get("created_at", datetime.min) <= one_week_ago:
+            break
+        week_entries.append(entry)
+
+    prompt = "<entries>\n"
+    for entry in week_entries:
+        prompt += f"""
+    <entry>
+        <text>\n{entry.get("text", "")}\n</text>
+        <happiness_score>{entry.get("happiness_score", 0)}</happiness_score>
+        <analysis>
+            <socialization>
+                {entry.get("analysis", {}).get("socialization", {}).get("explanation")}
+                <suggestions>
+                    {[f"<suggestion>{suggestion}</suggestion>" for suggestion in entry.get("analysis", {}).get("socialization", {}).get("suggestions", [])]}
+                </suggestions>
+            </socialization>
+            <productivity>
+                {entry.get("analysis", {}).get("productivity", {}).get("explanation")}
+                <suggestions>
+                    {[f"<suggestion>{suggestion}</suggestion>" for suggestion in entry.get("analysis", {}).get("productivity", {}).get("suggestions", [])]}
+                </suggestions>
+            </productivity>
+            <fulfillment>
+                {entry.get("analysis", {}).get("fulfillment", {}).get("explanation")}
+                <suggestions>
+                    {[f"<suggestion>{suggestion}</suggestion>" for suggestion in entry.get("analysis", {}).get("fulfillment", {}).get("suggestions", [])]}
+                </suggestions>
+            </fulillment>
+            <health>
+                {entry.get("analysis", {}).get("health", {}).get("explanation")}
+                <suggestions>
+                    {[f"<suggestion>{suggestion}</suggestion>" for suggestion in entry.get("analysis", {}).get("health", {}).get("suggestions", [])]}
+                </suggestions>
+            </health>
+        </analysis>
+    </entry>
+        """
+    prompt += "</entries>"
+    print(prompt)
+    weekly_summary_response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": diary_prompt.weekly_summary_system_prompt},
+            {
+                "role": "user",
+                "content": f"""These are some of my past diary entries from this week. Give me a goal to pursue\n{prompt}""",
+            },
+        ],
+    )
+    return fh.P(weekly_summary_response.choices[0].message.content)

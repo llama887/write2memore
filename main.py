@@ -100,4 +100,9 @@ def get(session, feature: str):
     )
 
 
+@rt("/weekly_summary")
+def get(session):
+    return dashboard.weekly_summary(openai_client, session, users_collection)
+
+
 fh.serve(host="localhost", port=5001)

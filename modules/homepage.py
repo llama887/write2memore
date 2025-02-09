@@ -142,9 +142,6 @@ def homepage(auth: Auth, session, users_collection: Collection):
             fh.H1(),
             fh.Script(js_css_loader.js["client_date.js"]),
         ),
-<<<<<<< HEAD
-        fh.Main(cls="main-form")(
-=======
         fh.Form(hx_post="/search", hx_trigger="submit", hx_target="#response")(
             fh.Input(
                 type="text",
@@ -162,9 +159,8 @@ def homepage(auth: Auth, session, users_collection: Collection):
             ),
             fh.A("Dashboard", href="/dashboard"),
         ),
-        fh.Main()(
+        fh.Main(cls="main-form")(
             fh.Div(id="diary-prompt")(fh.H2("Tell me about your day....")),
->>>>>>> franklin_dev/dashboard
             fh.Form(hx_post="/submit", hx_target="#data", hx_indicator="#spinner")(
                 fh.Script(js_css_loader.js["count_keystrokes_for_user_prompts.js"]),
                 fh.Textarea(
